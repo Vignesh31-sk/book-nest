@@ -1,11 +1,21 @@
-from ninja import Schema
+from library import models
+from django.contrib.auth.models import User
+from ninja import ModelSchema
 
 
-class BookOut(Schema):
-    id : int
-    name : str
-    author :str
+class BookOut(ModelSchema):
+    class Meta:
+        model = models.Book
+        fields = '__all__'
 
-class BookIn(Schema):
-    name : str
-    author : str
+
+class BookIn(ModelSchema):
+    class Meta:
+        model = models.Book
+        exclude = ['id']
+
+
+class UserIn(ModelSchema):
+    class Meta:
+        model = User
+        fields = ['username', 'password']
