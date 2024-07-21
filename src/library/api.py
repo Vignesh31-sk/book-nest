@@ -4,8 +4,10 @@ from ninja.errors import HttpError
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import get_object_or_404
-from .models import Book
+from django.middleware.csrf import get_token
+from .models import Book, Borrow
 from library import schemas
+from datetime import datetime, timedelta
 
 api = NinjaAPI(csrf=True)
 
@@ -41,11 +43,10 @@ def get_book(request, id: int):
 )
 def create_book(request, payload: schemas.BookIn):
     try:
-        # book = Book.objects.create(**payload.dict())
         book = Book(**payload.dict())
         book.validate_constraints()
         book.save()
-        raise HttpError(200, 'Sucessful')
+        return 200, "Successful"
     except Exception as e:
         print(f"Error : {e}")
         raise HttpError(400, str(e))
@@ -94,13 +95,19 @@ def create_user(request, payload: schemas.UserIn):
     raise HttpError(200, 'User has been created.')
 
 
+@api.get('/token')
+def get_csrf_token(request):
+    token = get_token(request)
+    return 200, {"csrf-token": token}
+
+
 @api.post('/login', operation_id='login')
 def login_user(request, payload: schemas.UserIn):
     user = authenticate(username=payload.username, password=payload.password)
-    print(user)
     if user is not None:
         login(request=request, user=user)
-        raise HttpError(200, 'Login successful')
+        csrf_token = get_token(request)
+        return 200, {"Status": "Login Successful", "CSRF-Token": csrf_token}
     raise HttpError(401, 'Cannot login. Invalid Credentials')
 
 
@@ -108,3 +115,46 @@ def login_user(request, payload: schemas.UserIn):
 def logout_user(request):
     logout(request=request)
     raise HttpError(200, 'User logged out.')
+
+
+@api.get(
+    '/availabe',
+    operation_id='available_book',
+    response=list[schemas.BookOut],
+    auth=django_auth
+)
+def get_available_book(request):
+    books = Book.objects.filter(borrow__isnull=True)
+    return books
+
+
+@api.get('/borrow', response=list[schemas.BookOut], auth=django_auth)
+def get_borrowed_books(request):
+    try:
+        books = Book.objects.filter(borrow__user=request.user)
+    except Exception as e:
+        raise HttpError(400, str(e))
+    return books
+
+
+@api.post('/borrow/{id}', operation_id='borrow_book', auth=django_auth)
+def borrow_book(request, id: int):
+    try:
+        user = request.user
+        book = Book.objects.get(id=id)
+        borrow = Borrow(user=user, book=book)
+        borrow.due = datetime.now().date() + timedelta(days=15)
+        borrow.save()
+    except Exception as e:
+        raise HttpError(400, str(e))
+    return 200, "Book borrowed successfully"
+
+
+@api.delete('/return/{id}', auth=django_auth)
+def return_book(request, id: int):
+    try:
+        borrow = Borrow.objects.get(book=id)
+        borrow.delete()
+        return 200, 'Returned Book sucessfully'
+    except Exception as e:
+        raise HttpError(400, str(e))

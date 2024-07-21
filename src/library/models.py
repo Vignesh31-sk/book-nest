@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.db.models import F, Q
 
 
@@ -22,3 +23,13 @@ class Book(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class Borrow(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    book = models.OneToOneField(
+        Book, on_delete=models.CASCADE)
+    due = models.DateField(auto_now=False, auto_now_add=False)
+
+    def __str__(self) -> str:
+        return f"{self.book.name}-{self.user.username}"
