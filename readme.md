@@ -17,7 +17,7 @@ The system can perform following actions.
 - Return a borrowed book.
 
 
-## Deployment Instructions.
+## Installation and Deployment.
 
 Install pipenv ( A virtual environment management tool )
 ```
@@ -39,15 +39,15 @@ cd src
 ```
 Create the database and tables.
 ```
-pipenv run manage.py migrate
+./manage.py migrate
 ```
 Create a admin account.
 ```
-pipenv run manage.py createsuperuser
+./manage.py createsuperuser
 ```
 Start the server.
 ```
-pipenv run manage.py runserver
+./manage.py runserver
 ```
 
 ## Usage
@@ -63,10 +63,11 @@ https://drive.google.com/file/d/1j4sZ8nVTyl-h4rd-po4Y_QwgPVJ6VKiN/view?usp=shari
 
 To close the server press `Ctrl-C` 
 
-To remove your python environments.
+To exit the virtual environment.
 ```
 deactivate
 ```
+To remove the environment along with the installed packages, i.e to uninstall.
 ```
 pipenv --rm
 ```
