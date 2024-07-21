@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 
 api = NinjaAPI(csrf=True)
 
+""" Administrative tasks endpoints."""
+
 
 @api.get(
     '/book',
@@ -19,6 +21,7 @@ api = NinjaAPI(csrf=True)
     auth=django_auth_superuser
 )
 def get_all_books(request):
+    """Get all books"""
     try:
         return Book.objects.all()
     except Exception as e:
@@ -32,6 +35,7 @@ def get_all_books(request):
     auth=django_auth_superuser
 )
 def get_book(request, id: int):
+    """ Get a book by book's id"""
     book = get_object_or_404(Book, id=id)
     return book
 
@@ -42,6 +46,7 @@ def get_book(request, id: int):
     operation_id='create_book'
 )
 def create_book(request, payload: schemas.BookIn):
+    """Create a new book."""
     try:
         book = Book(**payload.dict())
         book.validate_constraints()
@@ -58,6 +63,7 @@ def create_book(request, payload: schemas.BookIn):
     auth=django_auth_superuser
 )
 def update_book(request, id: int, payload: schemas.BookIn):
+    """Update a book"""
     book = get_object_or_404(Book, id=id)
     try:
         for attr, value in payload.dict().items():
@@ -78,6 +84,9 @@ def delete_book(request, id: int):
     book = get_object_or_404(Book, id=id)
     book.delete()
     raise HttpError(201, 'Successful')
+
+
+""" Login, Logout and SignUp endpoints."""
 
 
 @api.post("/user", operation_id='create_user')
@@ -117,6 +126,9 @@ def logout_user(request):
     raise HttpError(200, 'User logged out.')
 
 
+"""User tasks endpoints"""
+
+
 @api.get(
     '/availabe',
     operation_id='available_book',
@@ -124,12 +136,14 @@ def logout_user(request):
     auth=django_auth
 )
 def get_available_book(request):
+    """Get list of available books."""
     books = Book.objects.filter(borrow__isnull=True)
     return books
 
 
 @api.get('/borrow', response=list[schemas.BookOut], auth=django_auth)
 def get_borrowed_books(request):
+    """ Get list of borrowed books."""
     try:
         books = Book.objects.filter(borrow__user=request.user)
     except Exception as e:
@@ -139,6 +153,7 @@ def get_borrowed_books(request):
 
 @api.post('/borrow/{id}', operation_id='borrow_book', auth=django_auth)
 def borrow_book(request, id: int):
+    """ Borrow a book by book's id"""
     try:
         user = request.user
         book = Book.objects.get(id=id)
@@ -152,6 +167,7 @@ def borrow_book(request, id: int):
 
 @api.delete('/return/{id}', auth=django_auth)
 def return_book(request, id: int):
+    """ Return a book by book's id"""
     try:
         borrow = Borrow.objects.get(book=id)
         borrow.delete()

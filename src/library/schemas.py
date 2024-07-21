@@ -2,6 +2,8 @@ from library import models
 from django.contrib.auth.models import User
 from ninja import ModelSchema
 
+""" Schemas used for input and output via API"""
+
 
 class BookOut(ModelSchema):
     class Meta:
